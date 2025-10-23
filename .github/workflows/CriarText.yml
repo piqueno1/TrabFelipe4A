@@ -23,7 +23,6 @@ jobs:
             echo "👋 Push por: ${{ github.actor }}"
             echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "🌿 Branch: ${{ github.ref_name }}"
-            echo "🔗 Commit: ${{ github.sha }}"
           } > "$Arquivo"
           cat "$Arquivo"
 
