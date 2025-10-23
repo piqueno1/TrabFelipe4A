@@ -1,0 +1,32 @@
+name: IF Noturno
+
+on:
+  schedule:
+    - cron: '0 0-6 * * *'             # Dispara todo dia às 00:00, 01:00, ..., 06:00 (UTC)
+
+jobs:
+  executar_a_noite:
+    runs-on: ubuntu-latest            
+
+    steps:
+      - uses: actions/checkout@v4    
+
+     
+      - name: Checar se está noite (UTC)
+        id: check_time                
+        shell: bash
+        run: |
+          current_hour_utc=$(date -u +%H)   # Pega a HORA atual em UTC (00..23)
+          # Teste com [[ ... ]] (suporta &&). Se hora entre 0 e 6, marca is_night=true.
+          if [[ "$current_hour_utc" -ge 0 && "$current_hour_utc" -le 6 ]]; then
+            echo "is_night=true"  >> "$GITHUB_OUTPUT"   # Novo padrão p/ expor outputs do step
+          else
+            echo "is_night=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Só executa se o step anterior marcou is_night=true
+      - name: Executar tarefas noturnas
+        if: steps.check_time.outputs.is_night == 'true'
+        run: |
+          echo "Rodando tarefas noturnas..."
+          date -u   # Mostra timestamp UTC do momento da execução
