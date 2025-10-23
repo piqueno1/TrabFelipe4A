@@ -140,15 +140,14 @@ jobs:
               '
           fi
 
-      - name: Contar arquivos (meia-noite SP simulada às 03:00 UTC)
+      - name: Contar arquivos a meia noite
+        shell: bash
         run: |
           HUTC=$(date -u +%H)
           if [ "$HUTC" -eq 3 ]; then
-            HTML=$(find . -type f -name "*.html" | wc -l)
-            CSS=$(find  . -type f -name "*.css"  | wc -l)
-            JS=$(find   . -type f -name "*.js"   | wc -l)
-            TOTAL=$(find . -type f | wc -l)
-            echo "::notice title=Contagem diária SP::HTML=$HTML CSS=$CSS JS=$JS TOTAL=$TOTAL"
+            TOTAL=$(find . -path './.git' -prune -o -type f -print | wc -l)
+            echo "::notice title=Contagem diária (todos)::$TOTAL arquivos"
           else
             echo "Não é 03:00 UTC. Skip da rotina de meia-noite SP."
           fi
+
