@@ -1,0 +1,13 @@
+name: Listar Arquivos
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: 
+          echo "listando os arquivos"
+          ls -la
+          # -la mostra arquivos ocultos
