@@ -18,13 +18,10 @@ jobs:
       # Gera/atualiza um relatório com dados úteis do push
       - name: Criar arquivo com informações
         run: |
-          Arquivo="readme.txt"
-          {
             echo "👋 Push por: ${{ github.actor }}"
             echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "🌿 Branch: ${{ github.ref_name }}"
-          } > "$Arquivo"
-          cat "$Arquivo"
+            cat readme.txt
 
       # Commita e envia as mudanças
       - name: Commitar e enviar o arquivo
