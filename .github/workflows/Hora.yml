@@ -1,0 +1,13 @@
+name: Hora do Push
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mostrar_hora:
+    runs-on: ubuntu-latest
+    steps:
+      - name: exibi hora do push
+        run: |
+          python -c "import datetime; print(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))"
