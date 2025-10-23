@@ -1,4 +1,4 @@
-name: ALL - Steps em Sequência (baseado nos meus .yml)
+name: Steps em Sequência 
 
 on:
   push:
@@ -57,10 +57,14 @@ jobs:
         run: |
           find . -type f | wc -l
 
-      - name: Criar arquivo com informações do push
+      - name: Criar arquivo com informações
         run: |
-          echo "👋 Este push foi feito por: ${{ github.actor }}" > readme.txt
-          echo "📅 Data: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> readme.txt
+          echo "👋 Push por: ${{ github.actor }}"
+          echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          if [ ! -f readme.txt ]; then
+            touch readme.txt
+          fi
           cat readme.txt
           
       - name: Commitar e enviar o arquivo
