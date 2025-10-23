@@ -1,0 +1,15 @@
+name: Contagem Meia Noite
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # 03:00 UTC = 00:00 em São Paulo (UTC-3)
+
+jobs:
+  contar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contar arquivos (todos, exceto .git)
+        run: |
+          TOTAL=$(find . -path './.git' -prune -o -type f -print | wc -l)
+          echo "::notice title=Contagem diária (todos)::$TOTAL arquivos"
