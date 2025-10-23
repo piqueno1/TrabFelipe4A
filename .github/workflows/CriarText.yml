@@ -6,33 +6,42 @@ on:
       - main
 
 permissions:
-  contents: write  # necessário para commitar do runner
+  contents: write  
 
 jobs:
   create-readme:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
-      # Gera/atualiza o arquivo com dados do push (CRIA de fato o arquivo)
       - name: Criar arquivo com informações
         run: |
           {
             echo "👋 Push por: ${{ github.actor }}"
             echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "🌿 Branch: ${{ github.ref_name }}"
+            echo "🔗 Commit: ${{ github.sha }}"
           } > readme.txt
+
           echo "------ readme.txt ------"
           cat readme.txt
 
-      # Commit e push (evita loop e falha sem mudanças)
+      # Commit e push (só se houver mudanças)
       - name: Commitar e enviar o arquivo
         if: ${{ github.actor != 'github-actions[bot]' }}
+        shell: bash
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Só commita se houver diferenças
+          if git diff --quiet; then
+            echo "Sem mudanças para commitar."
+            exit 0
+          fi
+
           git add readme.txt
-          git commit -m "chore(ci): atualizar readme.txt [skip ci]" || echo "Sem mudanças para commitar"
+          git commit -m "chore(ci): atualizar readme.txt [skip ci]"
           git push || echo "Nada para enviar"
