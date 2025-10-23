@@ -59,12 +59,12 @@ jobs:
 
       - name: Criar arquivo com informações
         run: |
-          echo "👋 Push por: ${{ github.actor }}"
-          echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "🌿 Branch: ${{ github.ref_name }}"
-          if [ ! -f readme.txt ]; then
-            touch readme.txt
-          fi
+         {
+            echo "👋 Push por: ${{ github.actor }}"
+            echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "🌿 Branch: ${{ github.ref_name }}"
+          } > readme.txt
+          echo "------ readme.txt ------"
           cat readme.txt
           
       - name: Commitar e enviar o arquivo
