@@ -1,0 +1,11 @@
+name: o user do push
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+         echo "O user do push foi: ${{ github.event.pusher.name }}"
