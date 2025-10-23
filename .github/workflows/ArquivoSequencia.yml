@@ -1,0 +1,137 @@
+name: ALL - Steps em Sequência (baseado nos meus .yml)
+
+on:
+  push:
+    branches: [ "main" ]
+  
+  schedule:
+    - cron: "0 0-6 * * *"   # janela noturna (UTC 00..06)
+    - cron: "0 8 * * 6"     # sábado 08:00 UTC
+    - cron: "0 3 * * *"     # 03:00 UTC (meia-noite SP) – para contagem diária
+
+permissions:
+  contents: write  # para o step que cria/commita arquivo
+
+jobs:
+  tudo_em_sequencia:
+    runs-on: ubuntu-latest
+
+    steps:
+     
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Hello World
+        run: echo "Hello, world!"
+
+    
+      - name: Exibir data do push 
+        run: |
+          TS="${{ github.event.head_commit.timestamp }}"
+          date -u -d "${TS:-now}" +%F || date -u +%F
+
+      - name: Exibir hora do push 
+        run: |
+          python -c "import datetime; print(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))"
+
+      - name: Mostrar usuário do push
+        run: |
+          echo "O usuário que fez o push foi: ${{ github.event.pusher.name }}"
+          
+      - name: Calcular e exibir 2+2
+        run: |
+          RESULTADO=$((2+2))
+          echo "O resultado de 2+2 é: $RESULTADO"
+
+      - name: Listar arquivos 
+        run: |
+         echo "listando os arquivos"
+          ls -la
+          # -la mostra arquivos ocultos
+
+      - name: Contar arquivos na raiz
+        run: |
+          # conta apenas arquivos regulares no diretório atual (inclui ocultos)
+          find . -maxdepth 1 -type f | wc -l
+      - name: Contar arquivos recursivamente
+        run: |
+          find . -type f | wc -l
+
+      - name: Criar arquivo com informações do push
+        run: |
+          echo "👋 Este push foi feito por: ${{ github.actor }}" > readme.txt
+          echo "📅 Data: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> readme.txt
+          cat readme.txt
+          
+      - name: Commitar e enviar o arquivo
+        run: |
+         git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add readme.txt
+          git commit -m "Arquivo automático com dados"
+          git push
+
+      - name: Checar se está noite 
+        id: check_time
+        shell: bash
+        run: |
+          current_hour_utc=$(date -u +%H)   # Pega a HORA atual em UTC (00..23)
+          if [[ "$current_hour_utc" -ge 0 && "$current_hour_utc" -le 6 ]]; then
+            echo "is_night=true"  >> "$GITHUB_OUTPUT"   
+          else
+            echo "is_night=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Executar tarefas noturnas (quando for noite)
+        if: steps.check_time.outputs.is_night == 'true'
+        run: echo "Rodando tarefas noturnas..."
+
+      - name: Rodar apenas aos sábados 
+        run: |
+          H=$(date -u +%H)
+          DOW=$(date -u +%u) # 6 = sábado
+          if [[ "$DOW" -eq 6 && "$H" -eq 8 ]]; then
+            echo "Sábado 08:00 UTC. Executando tarefa de sábado..."
+          else
+            echo "Fora da janela de sábado 08:00 UTC."
+          fi
+
+      
+      - name: Avisar se houver arquivos >100KB 
+        run: |
+          TH=102400
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1 || true
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="$(git rev-parse HEAD^ || echo '')"
+          fi
+
+          if [ -n "$BASE" ]; then
+            git diff --name-only --diff-filter=AM -z "$BASE"...HEAD \
+            | xargs -0 -r -I{} bash -c '
+                [ -f "{}" ] || exit 0
+                s=$(wc -c < "{}")
+                [ "$s" -le '"$TH"' ] || echo "::warning file={},title=Arquivo grande::{} tem $(( (s+1023)/1024 )) KB (>100 KB)"
+              '
+          else
+            echo "Sem BASE (primeiro commit) — varrendo HEAD inteiro…"
+            git ls-tree -r --name-only HEAD -z \
+            | xargs -0 -r -I{} bash -c '
+                [ -f "{}" ] || exit 0
+                s=$(wc -c < "{}")
+                [ "$s" -le '"$TH"' ] || echo "::warning file={},title=Arquivo grande::{} tem $(( (s+1023)/1024 )) KB (>100 KB)"
+              '
+          fi
+
+      - name: Contar arquivos (meia-noite SP simulada às 03:00 UTC)
+        run: |
+          HUTC=$(date -u +%H)
+          if [ "$HUTC" -eq 3 ]; then
+            HTML=$(find . -type f -name "*.html" | wc -l)
+            CSS=$(find  . -type f -name "*.css"  | wc -l)
+            JS=$(find   . -type f -name "*.js"   | wc -l)
+            TOTAL=$(find . -type f | wc -l)
+            echo "::notice title=Contagem diária SP::HTML=$HTML CSS=$CSS JS=$JS TOTAL=$TOTAL"
+          else
+            echo "Não é 03:00 UTC. Skip da rotina de meia-noite SP."
+          fi
