@@ -1,0 +1,25 @@
+name: Exemplo simples
+
+on: [push]   # roda quando alguém faz push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest   # usa máquina Linux
+    steps:
+      - uses: actions/checkout@v4   # baixa o código do repositório
+      - run: echo "Olá, mundo!"
+-------------------------------------------------------------------------------
+name: Nome do workflow           # título que aparece na aba “Actions”
+on: [push, pull_request, schedule]  # eventos que disparam a execução
+jobs:                            # conjunto de tarefas (pode haver várias)
+  nome_do_job:
+    runs-on: ubuntu-latest       # sistema operacional usado
+    steps:                       # passos a serem executados
+      - uses: actions/checkout@v4 # action que faz o download do código
+      - run: echo "Rodando código" # comando executado no terminal
+-------------------------------------------------------------------------------      
+uses: → executa uma Action pronta (como um plugin).
+Exemplo:
+uses: actions/checkout@v4 → baixa o código do repositório.
+
+run: → executa comandos direto no terminal (bash, PowerShell, etc.).
