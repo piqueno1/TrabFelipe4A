@@ -1,0 +1,28 @@
+name: Contar Arquivos
+
+on:
+  push:
+    branches: [ "main" ] 
+
+jobs:
+  count_files:
+    runs-on: ubuntu-latest  
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+ 
+      # maxdepth 1  -> limita ao diretório atual (raiz)
+      # type f      -> considera apenas arquivos regulares (ignora diretórios)
+      # wc -l        -> conta linhas (cada caminho retornado é 1 linha)
+      - name: Contar arquivos na RAIZ (inclui ocultos)
+        run: |
+          echo "Arquivos na raiz (inclui ocultos):"
+          find . -maxdepth 1 -type f | wc -l
+          
+      # isso inclui .git e node_modules
+      - name: Contar arquivos RECURSIVAMENTE
+        run: |
+          echo "Arquivos recursivamente (bruto):"
+          find . -type f | wc -l
+
+     
