@@ -1,12 +1,8 @@
-    name: Exibir data
-
-    on: [push]
-
-    jobs:
-      show_date:
-        runs-on: ubuntu-latest
-        steps:
-          - name: exibir data do commit
-            run: echo "Data do push: ${{ github.event.head_commit.timestamp }}"
-
-    
+name: Exibir data
+on: [push]
+jobs:
+  show_date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exibir data do commit
+        run: echo "Data do push: ${{ github.event.head_commit.timestamp }}"
