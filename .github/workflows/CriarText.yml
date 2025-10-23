@@ -1,22 +1,26 @@
-name: Criar arquivo com informações do push
+name: Criar arquivo com informações do push   # Nome visível na aba Actions
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]                      # Roda só em push na main
 
 permissions:
-  contents: write
+  contents: write                             # Precisa para fazer push com GITHUB_TOKEN
 
 jobs:
   create-readme:
     runs-on: ubuntu-latest
+
     steps:
+      # Baixa o repo. fetch-depth:0 traz o histórico (necessário p/ rebase).
+      # persist-credentials:true mantém o GITHUB_TOKEN configurado para push.
       - name: Checkout do repositório
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0              # precisamos do histórico p/ rebase
-          persist-credentials: true   # usa GITHUB_TOKEN p/ push
+          fetch-depth: 0
+          persist-credentials: true
 
+      # Gera/atualiza o arquivo; o bloco { ... } > readme.txt cria/substitui.
       - name: Criar arquivo com informações
         shell: bash
         run: |
@@ -28,6 +32,11 @@ jobs:
           } > readme.txt
           cat readme.txt
 
+      # Commita e faz push com proteção:
+      # - não roda se o ator for o próprio bot (evita loop)
+      # - só commita se houver mudanças
+      # - puxa com rebase antes do push (evita 'fetch first')
+      # - tenta 3 vezes (corrida entre jobs)
       - name: Commitar e enviar (com pull --rebase e retry)
         if: ${{ github.actor != 'github-actions[bot]' }}
         shell: bash
@@ -35,30 +44,34 @@ jobs:
           set -e
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Evita warning de safe.directory em runners
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-          # Só commita se mudou
+          # Só commita se houver diferenças no working tree
           if git diff --quiet; then
             echo "Sem mudanças para commitar."
             exit 0
           fi
 
           git add readme.txt
-          git commit -m "chore(ci): atualizar readme.txt [skip ci]"
+          git commit -m "chore(ci): atualizar readme.txt [skip ci]"  # [skip ci] evita loop
 
-          # Rebase + retry para evitar 'fetch first'
+          # Rebase + push com até 3 tentativas (evita non-fast-forward)
           for i in 1 2 3; do
             echo "Tentativa $i de push..."
+            # Atualiza a branch local rebaseando no remoto
             if git pull --rebase origin "${GITHUB_REF_NAME:-main}"; then
+              # Empurra a HEAD atual para a mesma branch remota
               if git push origin HEAD:"${GITHUB_REF_NAME:-main}"; then
                 echo "Push OK."
                 exit 0
               fi
             else
-              # Se deu conflito, aborta rebase para próxima tentativa
+              # Se houve conflito, aborta rebase para tentar de novo limpo
               git rebase --abort || true
             fi
             sleep 3
           done
 
-          echo "Falhou após 3 tentativas."; exit 1
+          echo "Falhou após 3 tentativas."
+          exit 1
