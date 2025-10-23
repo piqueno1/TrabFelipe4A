@@ -1,0 +1,39 @@
+name: Criar arquivo com informações do push 
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write  # necessário para commitar do runner
+
+jobs:
+  create-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # Gera/atualiza um relatório com dados úteis do push
+      - name: Criar arquivo com informações
+        run: |
+          Arquivo="readme.txt"
+          {
+            echo "👋 Push por: ${{ github.actor }}"
+            echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "🌿 Branch: ${{ github.ref_name }}"
+            echo "🔗 Commit: ${{ github.sha }}"
+          } > "$Arquivo"
+          cat "$Arquivo"
+
+      # Commita e envia as mudanças
+      - name: Commitar e enviar o arquivo
+        if: ${{ github.actor != 'github-actions[bot]' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add readme.txt
+          git commit -m "Arquivo automático com dados"
+          git push
