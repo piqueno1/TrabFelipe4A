@@ -1,0 +1,10 @@
+name: IfSabados
+on:
+  schedule:
+    - cron: '0 11 * * 6'  # 11:00 UTC = 08:00 America/Sao_Paulo
+jobs:
+  sabado_sp_8h:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Executando sábado 08:00 (SP). Agora UTC: $(date -u)"
