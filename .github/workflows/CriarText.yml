@@ -2,21 +2,23 @@ name: Criar arquivo com informações do push
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 permissions:
-  contents: write  
+  contents: write
 
 jobs:
   create-readme:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0              # precisamos do histórico p/ rebase
+          persist-credentials: true   # usa GITHUB_TOKEN p/ push
 
       - name: Criar arquivo com informações
+        shell: bash
         run: |
           {
             echo "👋 Push por: ${{ github.actor }}"
@@ -24,19 +26,18 @@ jobs:
             echo "🌿 Branch: ${{ github.ref_name }}"
             echo "🔗 Commit: ${{ github.sha }}"
           } > readme.txt
-
-          echo "------ readme.txt ------"
           cat readme.txt
 
-      # Commit e push (só se houver mudanças)
-      - name: Commitar e enviar o arquivo
+      - name: Commitar e enviar (com pull --rebase e retry)
         if: ${{ github.actor != 'github-actions[bot]' }}
         shell: bash
         run: |
+          set -e
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-          # Só commita se houver diferenças
+          # Só commita se mudou
           if git diff --quiet; then
             echo "Sem mudanças para commitar."
             exit 0
@@ -44,4 +45,20 @@ jobs:
 
           git add readme.txt
           git commit -m "chore(ci): atualizar readme.txt [skip ci]"
-          git push || echo "Nada para enviar"
+
+          # Rebase + retry para evitar 'fetch first'
+          for i in 1 2 3; do
+            echo "Tentativa $i de push..."
+            if git pull --rebase origin "${GITHUB_REF_NAME:-main}"; then
+              if git push origin HEAD:"${GITHUB_REF_NAME:-main}"; then
+                echo "Push OK."
+                exit 0
+              fi
+            else
+              # Se deu conflito, aborta rebase para próxima tentativa
+              git rebase --abort || true
+            fi
+            sleep 3
+          done
+
+          echo "Falhou após 3 tentativas."; exit 1
