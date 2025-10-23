@@ -58,22 +58,35 @@ jobs:
           find . -type f | wc -l
 
       - name: Criar arquivo com informações
+        shell: bash
         run: |
-         {
+          {
             echo "👋 Push por: ${{ github.actor }}"
             echo "📅 Data (UTC): $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "🌿 Branch: ${{ github.ref_name }}"
+            echo "🔗 Commit: ${{ github.sha }}"
           } > readme.txt
+
           echo "------ readme.txt ------"
           cat readme.txt
-          
+
       - name: Commitar e enviar o arquivo
+        if: ${{ github.actor != 'github-actions[bot]' }}
+        shell: bash
         run: |
-         git config user.name  "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Só commita se houver mudanças
+          if git diff --quiet; then
+            echo "Sem mudanças para commitar."
+            exit 0
+          fi
+
           git add readme.txt
-          git commit -m "Arquivo automático com dados"
-          git push
+          git commit -m "chore(ci): atualizar readme.txt [skip ci]"
+          git push || echo "Nada para enviar"
+
 
       - name: Checar se está noite 
         id: check_time
