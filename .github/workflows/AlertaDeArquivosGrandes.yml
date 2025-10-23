@@ -1,0 +1,31 @@
+name: Alertar De Arquivos Grandes
+
+on:
+  push:
+    branches: [ "main" ]              
+
+jobs:
+  bigfiles:
+    runs-on: ubuntu-latest            
+
+    steps:
+      - uses: actions/checkout@v4     
+
+      # Lista cada arquivo grande, mostrando caminho e tamanho em KB
+      # -printf "%p (%k KB)\n" imprime "caminho (kilobytes)"
+      # Emite um aviso (annotation) no log do Actions 
+      # 2>/dev/null silencia warnings (p.ex., permissões) e '|| true' evita falha do step
+      # Caso não haja nenhum arquivo acima de 100 KB
+      
+      - run: |                        # Step único: varre e alerta arquivos grandes
+          # Conta quantos arquivos têm tamanho > 100 KB
+          BIG=$(find . -type f -size +100k | wc -l)
+
+          if [ "$BIG" -gt 0 ]; then
+            echo "::warning ::Existem $BIG arquivo(s) maiores que 100KB."
+
+            find . -type f -size +100k -printf "%p (%k KB)\n" 2>/dev/null || true
+          else
+           
+            echo "Nenhum arquivo acima de 100KB."
+          fi
